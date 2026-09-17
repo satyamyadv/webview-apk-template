@@ -95,8 +95,63 @@ Actions):
 - **Back button:** navigates back in WebView history before exiting
 - **File upload:** supports gallery picker and camera capture
 - **Permissions:** camera and microphone are granted to the WebView on request
+- **Cleartext HTTP:** allowed for all hosts (see [Network Security](#network-security))
+- **Local network access:** requested on launch on Android 17+ (see
+  [Network Security](#network-security))
 - **App icon:** downloaded and converted into legacy and adaptive launcher resources at build time
 - **Signing:** v1 + v2 + v3 schemes enabled, v4 disabled
+
+## Network Security
+
+The template turns off two Android network protections by default so that it works with as many
+sites as possible. If your site does not need them, turn the protections back on.
+
+### Cleartext HTTP
+
+`app/src/main/res/xml/network_security_config.xml` allows unencrypted `http://` traffic to every
+host. Traffic sent this way can be read and modified by anyone on the network path.
+
+To block cleartext traffic again, set `cleartextTrafficPermitted` to `false`:
+
+```xml
+<base-config cleartextTrafficPermitted="false">
+```
+
+To allow HTTP only for specific hosts, such as a device on your LAN, keep the base config blocked
+and add a `domain-config`:
+
+```xml
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">192.168.1.10</domain>
+    </domain-config>
+</network-security-config>
+```
+
+The WebView also uses `MIXED_CONTENT_COMPATIBILITY_MODE`, which lets an HTTPS page load some HTTP
+resources such as images and media. To block all mixed content, change it to
+`WebSettings.MIXED_CONTENT_NEVER_ALLOW` in `MainActivity.kt`.
+
+### Local network access (Android 17+)
+
+Apps that target SDK 37 cannot reach devices on the local network (private IP ranges, `.local`
+hosts, and so on) unless the user grants `ACCESS_LOCAL_NETWORK`. WebView traffic uses the app's
+permission, and WebView does not ask the app about it through `onPermissionRequest`. For this
+reason the app declares the permission and requests it on first launch. If the user grants it, the
+page reloads so that blocked requests run again. Any page the WebView loads can then reach the
+user's local network.
+
+If your site does not use the local network, delete this line from
+`app/src/main/AndroidManifest.xml`:
+
+```xml
+<uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+```
+
+The app requests the permission only when the manifest declares it, so no Kotlin changes are
+needed. On Android 17 and later, local network requests from the WebView are then blocked. Older Android
+versions do not have this permission and keep allowing local network access.
 
 ## Signing Notes
 

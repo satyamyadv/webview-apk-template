@@ -22,6 +22,7 @@ import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.OnBackPressedCallback
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.core.graphics.ColorUtils
@@ -93,6 +94,14 @@ class MainActivity : AppCompatActivity() {
                 pending.request.grant(pending.resources)
             } else {
                 pending.request.deny()
+            }
+        }
+    private val localNetworkPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            Log.d(TAG, "Local network permission result. granted=$granted")
+            // Requests made before the grant were blocked; reload so the page can retry them.
+            if (granted) {
+                webView.reload()
             }
         }
     private val fileChooserLauncher =
@@ -268,6 +277,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         webView.loadUrl(HOME_URL)
+        // A recreated activity may already have a request in flight; its result is redelivered.
+        if (savedInstanceState == null) {
+            requestLocalNetworkPermissionIfNeeded()
+        }
 
         onBackPressedDispatcher.addCallback(
             this,
@@ -297,6 +310,34 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         CookieManager.getInstance().flush()
         super.onStop()
+    }
+
+    /**
+     * Android 17 blocks local network traffic for apps targeting SDK 37 unless
+     * ACCESS_LOCAL_NETWORK is granted. WebView traffic inherits the app's permission
+     * state and offers no PermissionRequest resource for it, so the app asks up front.
+     * Removing the permission from the manifest opts out of the request.
+     */
+    private fun requestLocalNetworkPermissionIfNeeded() {
+        if (
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN ||
+            !isPermissionDeclared(Manifest.permission.ACCESS_LOCAL_NETWORK) ||
+            checkSelfPermission(Manifest.permission.ACCESS_LOCAL_NETWORK) ==
+                PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        Log.d(TAG, "Request runtime permission for ${Manifest.permission.ACCESS_LOCAL_NETWORK}")
+        localNetworkPermissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun isPermissionDeclared(permission: String): Boolean {
+        val packageInfo = packageManager.getPackageInfo(
+            packageName,
+            PackageManager.PackageInfoFlags.of(PackageManager.GET_PERMISSIONS.toLong())
+        )
+        return packageInfo.requestedPermissions?.contains(permission) == true
     }
 
     private fun buildFileChooserIntent(fileChooserParams: WebChromeClient.FileChooserParams?): Intent {
