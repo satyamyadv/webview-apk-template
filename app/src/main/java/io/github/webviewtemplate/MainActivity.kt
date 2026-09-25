@@ -276,17 +276,9 @@ class MainActivity : AppCompatActivity() {
                 view: WebView,
                 request: WebResourceRequest
             ): Boolean {
-            val currentUrl = request?.url?.toString() ?: ""
-if (currentUrl.contains("://google.com") || currentUrl.contains("://google.com")) {
-    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(currentUrl))
-    view?.context?.startActivity(intent)
-    return true
-}
-return false
-                
+        return false
             }
-        }
-
+            
         webView.loadUrl(HOME_URL)
         // A recreated activity may already have a request in flight; its result is redelivered.
         if (savedInstanceState == null) {
