@@ -161,12 +161,6 @@ class MainActivity : AppCompatActivity() {
         cookieManager.setAcceptThirdPartyCookies(webView, true)
 
         webView.webChromeClient = object : WebChromeClient() {
-            override fun onCreateWindow(view: android.webkit.WebView?, isDialog: kotlin.Boolean, isUserGesture: kotlin.Boolean, resultMsg: android.os.Message?): kotlin.Boolean {
-    val transport = resultMsg?.obj as? android.webkit.WebView.WebViewTransport
-    transport?.webView = view
-    resultMsg?.sendToTarget()
-    return true
-            }
             
             override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                 if (consoleMessage != null) {
@@ -282,7 +276,14 @@ class MainActivity : AppCompatActivity() {
                 view: WebView,
                 request: WebResourceRequest
             ): Boolean {
-                return false
+            val currentUrl = request?.url?.toString() ?: ""
+if (currentUrl.contains("://google.com") || currentUrl.contains("://google.com")) {
+    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(currentUrl))
+    view?.context?.startActivity(intent)
+    return true
+}
+return false
+                
             }
         }
 
