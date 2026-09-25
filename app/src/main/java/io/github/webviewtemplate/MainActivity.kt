@@ -155,6 +155,17 @@ class MainActivity : AppCompatActivity() {
         webView.settings.mediaPlaybackRequiresUserGesture = false
         webView.settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
         webView.settings.userAgentString = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+        webView.webViewClient = object : android.webkit.WebViewClient() {
+    override fun shouldOverrideUrlLoading(view: android.webkit.WebView?, request: android.webkit.WebResourceRequest?): Boolean {
+        val url = request?.url?.toString() ?: ""
+        if (url.contains("://google.com") || url.contains("://google.com")) {
+            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+            view?.context?.startActivity(intent)
+            return true
+        }
+        return false
+    }
+        }
         
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
