@@ -149,6 +149,7 @@ class MainActivity : AppCompatActivity() {
         ViewCompat.requestApplyInsets(rootContainer)
 
         webView.settings.javaScriptEnabled = true
+        webView.settings.setSupportMultipleWindows(true)
         
         webView.settings.domStorageEnabled = true
         webView.settings.mediaPlaybackRequiresUserGesture = false
@@ -160,6 +161,13 @@ class MainActivity : AppCompatActivity() {
         cookieManager.setAcceptThirdPartyCookies(webView, true)
 
         webView.webChromeClient = object : WebChromeClient() {
+            override fun onCreateWindow(view: android.webkit.WebView?, isDialog: kotlin.Boolean, isUserGesture: kotlin.Boolean, resultMsg: android.os.Message?): kotlin.Boolean {
+    val transport = resultMsg?.obj as? android.webkit.WebView.WebViewTransport
+    transport?.webView = view
+    resultMsg?.sendToTarget()
+    return true
+            }
+            
             override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                 if (consoleMessage != null) {
                     Log.d(
